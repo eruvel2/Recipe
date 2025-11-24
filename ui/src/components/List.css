@@ -1,0 +1,59 @@
+.list-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.list-container h2 {
+  padding: 15px;
+  margin: 0;
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  font-size: 18px;
+}
+
+.list-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.list-empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.recipe-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recipe-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background-color: white;
+}
+
+.recipe-item:hover {
+  background-color: #f0f0f0;
+}
+
+.recipe-item.selected {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+.recipe-item:last-child {
+  border-bottom: none;
+}
+
