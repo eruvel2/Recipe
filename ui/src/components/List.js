@@ -1,5 +1,20 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { BookOpen } from 'lucide-react';
+
+// Memoized list item component to prevent unnecessary re-renders
+const ListItem = memo(function ListItem({ recipe, isSelected, onSelect }) {
+  return (
+    <li
+      onClick={onSelect}
+      className={`px-3 py-1.5 cursor-pointer transition-all border-b border-gray-200 text-sm ${isSelected
+          ? 'bg-blue-100 text-blue-800 font-semibold'
+          : 'bg-white text-gray-800 hover:bg-gray-50'
+        }`}
+    >
+      {recipe.name}
+    </li>
+  );
+});
 
 function List({ recipes, selectedRecipe, onRecipeSelect }) {
   return (
@@ -14,17 +29,15 @@ function List({ recipes, selectedRecipe, onRecipeSelect }) {
         ) : (
           <ul className="m-0 p-0 list-none">
             {recipes.map(recipe => (
-              <li
+              <ListItem
                 key={recipe.id || recipe.name}
-                onClick={() => onRecipeSelect(recipe)}
-                className={`px-3 py-1.5 cursor-pointer transition-all border-b border-gray-200 text-sm ${(selectedRecipe?.id && recipe.id && selectedRecipe.id === recipe.id) ||
-                    (selectedRecipe?.name === recipe.name)
-                    ? 'bg-blue-100 text-blue-800 font-semibold'
-                    : 'bg-white text-gray-800 hover:bg-gray-50'
-                  }`}
-              >
-                {recipe.name}
-              </li>
+                recipe={recipe}
+                isSelected={
+                  (selectedRecipe?.id && recipe.id && selectedRecipe.id === recipe.id) ||
+                  (selectedRecipe?.name === recipe.name)
+                }
+                onSelect={() => onRecipeSelect(recipe)}
+              />
             ))}
           </ul>
         )}
@@ -34,4 +47,3 @@ function List({ recipes, selectedRecipe, onRecipeSelect }) {
 }
 
 export default List;
-

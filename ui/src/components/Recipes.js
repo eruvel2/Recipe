@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
@@ -19,10 +19,15 @@ function Recipes() {
   // Get user permissions from localStorage
   useEffect(() => {
     const userData = localStorage.getItem('user');
+    console.log('Raw localStorage user data:', userData);
     if (userData) {
       try {
         const user = JSON.parse(userData);
+        console.log('Parsed user object:', user);
+        console.log('canUpdate value:', user.canUpdate);
+        console.log('canUpdate type:', typeof user.canUpdate);
         setCanUpdate(user.canUpdate || false);
+        console.log('Set canUpdate to:', user.canUpdate || false);
       } catch (error) {
         console.error('Error parsing user data:', error);
         setCanUpdate(false);
@@ -63,18 +68,24 @@ function Recipes() {
     fetchRecipes();
   }, []);
 
-  // Filter recipes based on search and category
-  const filteredRecipes = recipes.filter(recipe => {
-    const matchesSearch = recipe.name ? recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
-    const matchesCategory = !selectedCategory || recipe.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Memoize filtered recipes to prevent recalculation on every render
+  const filteredRecipes = useMemo(() => {
+    return recipes.filter(recipe => {
+      const matchesSearch = recipe.name ? recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+      const matchesCategory = !selectedCategory || recipe.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [recipes, searchTerm, selectedCategory]);
 
-  // Calculate pagination
+  // Memoize paginated recipes
+  const paginatedRecipes = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredRecipes.slice(startIndex, endIndex);
+  }, [filteredRecipes, currentPage, itemsPerPage]);
+
+  // Calculate total pages
   const totalPages = Math.ceil(filteredRecipes.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedRecipes = filteredRecipes.slice(startIndex, endIndex);
 
   // Reset page when filters change
   useEffect(() => {
@@ -139,14 +150,14 @@ function Recipes() {
   const handleRecipeSelect = async (recipe) => {
     if (recipe && recipe.name) {
       try {
-        // Get the current user's ID token
         const user = auth.currentUser;
         if (!user) {
           console.error('No authenticated user');
           return;
         }
 
-        const idToken = await user.getIdToken();
+        // Use cached token instead of fetching new one each time
+        const idToken = user.accessToken || await user.getIdToken(false);
 
         const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/recipes/${recipe.name}`, {
           headers: {

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Plus, Save, RotateCcw, ChefHat } from 'lucide-react';
 
-function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
+const Details = memo(function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
   const [formData, setFormData] = useState({
     category: '',
     name: '',
@@ -12,28 +12,18 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
 
   useEffect(() => {
     if (recipe) {
-      // Extract numbered ingredients from recipe object
       const ingredients = [];
       for (let i = 1; i <= 25; i++) {
         const val = recipe[`ingredient${i}`];
         if (val) ingredients.push(val);
       }
-
-      // If none found, check if it's already an array (backward compatibility or different schema)
-      if (ingredients.length === 0 && recipe.ingredients && Array.isArray(recipe.ingredients)) {
-        ingredients.push(...recipe.ingredients);
-      }
-
-      // Pad ingredients array to 12 elements
       while (ingredients.length < 25) {
         ingredients.push('');
       }
-
       setFormData({
         category: recipe.category || '',
         name: recipe.name || '',
         temperature: recipe.temperature || '',
-        // API returns 'cooktime', we map it to 'cookTime' state
         cookTime: recipe.cooktime || recipe.cookTime || '',
         ingredients: ingredients.slice(0, 25)
       });
@@ -46,7 +36,7 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
         ingredients: Array(25).fill('')
       });
     }
-  }, [recipe]);
+  }, [recipe?.ID]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({
@@ -56,12 +46,14 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
   };
 
   const handleIngredientChange = (index, value) => {
-    const newIngredients = [...formData.ingredients];
-    newIngredients[index] = value;
-    setFormData(prev => ({
-      ...prev,
-      ingredients: newIngredients
-    }));
+    setFormData(prev => {
+      const newIngredients = [...prev.ingredients];
+      newIngredients[index] = value;
+      return {
+        ...prev,
+        ingredients: newIngredients
+      };
+    });
   };
 
   const handleAdd = () => {
@@ -73,13 +65,12 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
       ingredients: formData.ingredients.filter(ing => ing.trim() !== '')
     };
     onAdd(recipeData);
-    // Reset form
     setFormData({
       category: '',
       name: '',
       temperature: '',
       cookTime: '',
-      ingredients: Array(12).fill('')
+      ingredients: Array(25).fill('')
     });
   };
 
@@ -95,20 +86,12 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
   };
 
   const handleResetInternal = () => {
-    // Re-trigger the useEffect logic effectively by resetting to recipe prop or empty
     if (onReset) onReset();
-
-    // We can also just re-run the extraction logic here if needed, 
-    // but typically onReset might clear selection in parent. 
-    // If we just want to reset form to current recipe state:
     if (recipe) {
       const ingredients = [];
       for (let i = 1; i <= 25; i++) {
         const val = recipe[`ingredient${i}`];
         if (val) ingredients.push(val);
-      }
-      if (ingredients.length === 0 && recipe.ingredients && Array.isArray(recipe.ingredients)) {
-        ingredients.push(...recipe.ingredients);
       }
       while (ingredients.length < 25) {
         ingredients.push('');
@@ -126,7 +109,7 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
         name: '',
         temperature: '',
         cookTime: '',
-        ingredients: Array(12).fill('')
+        ingredients: Array(25).fill('')
       });
     }
   };
@@ -140,7 +123,6 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
         <h2 className="text-2xl font-bold text-gray-800 m-0">Recipe Details</h2>
       </div>
       <div className="flex flex-col gap-5">
-        {/* Aligned form fields */}
         <div className="grid grid-cols-[120px_1fr] items-center gap-3">
           <label className="text-sm font-semibold text-gray-700 text-right">Category:</label>
           <input
@@ -199,7 +181,6 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
             }}
           >
             <div className="grid grid-cols-2 gap-4">
-              {/* Left column: Ingredients 1-13 */}
               <div className="flex flex-col gap-2">
                 {Array.from({ length: 13 }, (_, i) => (
                   <input
@@ -212,7 +193,6 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
                   />
                 ))}
               </div>
-              {/* Right column: Ingredients 14-25 */}
               <div className="flex flex-col gap-2">
                 {Array.from({ length: 12 }, (_, i) => (
                   <input
@@ -260,6 +240,6 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
       </div>
     </div>
   );
-}
+});
 
 export default Details;

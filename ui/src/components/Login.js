@@ -37,7 +37,7 @@ function Login() {
             localStorage.setItem('user', JSON.stringify({
                 email: user.email,
                 name: user.displayName,
-                canUpdate: data.user?.updateable || false
+                canUpdate: data.user?.canUpdate || false
             }));
 
             // Redirect to home page

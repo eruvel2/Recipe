@@ -7,8 +7,7 @@ const app = new Hono();
 
 // CORS configuration - allow all Pages deployments and custom domains
 const allowedOrigins = [
-    'https://924b259e.recipe-app-17d.pages.dev',
-    'https://a2d1b39f.recipe-app-17d.pages.dev',
+    'https://6be325aa.recipe-app-17d.pages.dev',
     'https://cc85b067.recipe-app-17d.pages.dev',
     'https://master.recipe-app-17d.pages.dev',
     'https://recipe-app-17d.pages.dev',
@@ -63,13 +62,28 @@ app.post('/api/verify-user', verifyFirebaseToken, async (c) => {
         }
 
         const user = result.rows[0];
-        return c.json({
+
+        // Debug logging
+        console.log('Database user row:', user);
+        console.log('user.updateable value:', user.updateable);
+        console.log('user.updateable type:', typeof user.updateable);
+        console.log('user.updateable === "t":', user.updateable === 't');
+        console.log('user.updateable === true:', user.updateable === true);
+
+        const canUpdateValue = user.updateable === 't' || user.updateable === true;
+        console.log('Calculated canUpdate:', canUpdateValue);
+
+        const response = {
             success: true,
             user: {
                 email: user.email,
-                canUpdate: user.updateable
+                canUpdate: canUpdateValue
             }
-        });
+        };
+
+        console.log('Returning response:', JSON.stringify(response));
+
+        return c.json(response);
     } catch (error) {
         console.error('Error verifying user:', error);
         return c.json({
