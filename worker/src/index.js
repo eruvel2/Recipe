@@ -115,7 +115,7 @@ app.get('/api/recipes/:name', verifyFirebaseToken, verifyUserInDB, async (c) => 
 
     try {
         const result = await query(c.env.DB,
-            'SELECT * FROM recipe WHERE name = $1',
+            'SELECT * FROM recipe WHERE trim(lower(name = trim$1',
             [name]
         );
 
@@ -166,6 +166,55 @@ app.put('/api/recipes/:name', verifyFirebaseToken, verifyUserInDB, async (c) => 
         return c.json(result.rows[0]);
     } catch (error) {
         console.error('Error updating recipe:', error);
+        return c.json({
+            error: 'Internal server error',
+            details: error.message
+        }, 500);
+    }
+});
+
+// Create Recipe
+app.post('/api/recipes', verifyFirebaseToken, verifyUserInDB, async (c) => {
+    // Check if user has permission to create recipes
+    const dbUser = c.get('dbUser');
+    if (!dbUser?.canUpdate) {
+        return c.json({
+            error: 'Forbidden',
+            message: 'You do not have permission to create recipes'
+        }, 403);
+    }
+
+    const { name, category, temperature, cookTime, ingredients } = await c.req.json();
+
+    // Validate required field
+    if (!name || !name.trim()) {
+        return c.json({ error: 'Name is required' }, 400);
+    }
+
+    try {
+        const values = [name.trim(), category || '', temperature || '', cookTime || ''];
+
+        // Add ingredient values
+        for (let i = 0; i < 25; i++) {
+            values.push(ingredients[i] || '');
+        }
+
+        const queryText = `
+            INSERT INTO recipe (name, category, temperature, cooktime, ingredient1, ingredient2, ingredient3, ingredient4, ingredient5, ingredient6, ingredient7, ingredient8, ingredient9, ingredient10, ingredient11, ingredient12, ingredient13, ingredient14, ingredient15, ingredient16, ingredient17, ingredient18, ingredient19, ingredient20, ingredient21, ingredient22, ingredient23, ingredient24, ingredient25)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
+            RETURNING *
+        `;
+
+        const result = await query(c.env.DB, queryText, values);
+        return c.json(result.rows[0], 201);
+    } catch (error) {
+        console.error('Error creating recipe:', error);
+
+        // Handle duplicate name error
+        if (error.message && error.message.includes('duplicate')) {
+            return c.json({ error: 'A recipe with this name already exists' }, 409);
+        }
+
         return c.json({
             error: 'Internal server error',
             details: error.message

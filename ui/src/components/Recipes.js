@@ -92,13 +92,49 @@ function Recipes() {
     setCurrentPage(1);
   }, [searchTerm, selectedCategory]);
 
-  const handleAdd = (recipeData) => {
-    const newRecipe = {
-      id: Date.now(),
-      ...recipeData
-    };
-    setRecipes([...recipes, newRecipe]);
-    setSelectedRecipe(null);
+  const handleAdd = async (recipeData) => {
+    // Validate name is provided
+    if (!recipeData.name || !recipeData.name.trim()) {
+      alert('Recipe name is required');
+      return;
+    }
+
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.error('No authenticated user');
+        return;
+      }
+
+      const idToken = await user.getIdToken();
+
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/recipes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(recipeData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || error.message || 'Failed to create recipe');
+      }
+
+      const newRecipe = await response.json();
+
+      // Add to local state
+      setRecipes([...recipes, newRecipe]);
+
+      // Select the newly created recipe
+      setSelectedRecipe(newRecipe);
+
+      alert('Recipe created successfully!');
+    } catch (err) {
+      console.error('Error creating recipe:', err);
+      alert(`Failed to create recipe: ${err.message}`);
+    }
   };
 
   const handleUpdate = async (recipeData) => {

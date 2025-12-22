@@ -110,8 +110,10 @@ wrangler deploy
 # Deploy Frontend
 cd ../ui
 npm run build
-wrangler pages deploy build --project-name=recipe-app
+wrangler pages deploy build --project-name=recipe-app --branch=main
 ```
+
+> **Note:** Always use `--branch=main` to deploy to production. The production branch is configured as `main` in Cloudflare Pages.
 
 ## 🐛 Debugging
 

@@ -212,7 +212,12 @@ const Details = memo(function Details({ recipe, onAdd, onUpdate, onReset, canUpd
         <div className="flex gap-3 pt-4 border-t border-gray-200">
           <button
             onClick={handleAdd}
-            className="flex items-center justify-center gap-2 flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg border-none cursor-pointer font-semibold shadow-md hover:from-green-700 hover:to-green-800 transition-all"
+            disabled={!formData.name || !formData.name.trim() || !canUpdate}
+            title={!canUpdate ? "You don't have permission to create recipes" : ""}
+            className={`flex items-center justify-center gap-2 flex-1 px-4 py-3 text-white rounded-lg border-none font-semibold shadow-md transition-all ${!formData.name || !formData.name.trim() || !canUpdate
+                ? 'bg-gradient-to-r from-gray-300 to-gray-400 cursor-not-allowed opacity-60'
+                : 'bg-gradient-to-r from-green-600 to-green-700 cursor-pointer hover:from-green-700 hover:to-green-800'
+              }`}
           >
             <Plus size={18} />
             Add

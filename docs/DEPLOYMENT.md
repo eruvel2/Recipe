@@ -203,8 +203,10 @@ flowchart LR
 
 4. **Deploy to Cloudflare Pages:**
    ```bash
-   wrangler pages deploy build --project-name=recipe-app
+   wrangler pages deploy build --project-name=recipe-app --branch=main
    ```
+
+   > **Note:** Always use `--branch=main` to deploy to production. The production branch is configured as `main` in Cloudflare Pages.
 
    **First time:** You'll be prompted to:
    - Create new project (select "Create a new project")
@@ -273,7 +275,7 @@ wrangler tail  # Monitor logs
 cd ui
 # Make code changes
 npm run build
-wrangler pages deploy build --project-name=recipe-app
+wrangler pages deploy build --project-name=recipe-app --branch=main
 ```
 
 ### Update Both
@@ -286,7 +288,7 @@ wrangler deploy
 # Deploy Frontend
 cd ../ui
 npm run build
-wrangler pages deploy build --project-name=recipe-app
+wrangler pages deploy build --project-name=recipe-app --branch=main
 ```
 
 ## Rollback Procedure
@@ -540,8 +542,8 @@ jobs:
 # Deploy Worker
 cd worker && wrangler deploy
 
-# Deploy Pages
-cd ui && npm run build && wrangler pages deploy build --project-name=recipe-app
+# Deploy Pages (to main branch for production)
+cd ui && npm run build && wrangler pages deploy build --project-name=recipe-app --branch=main
 
 # View Worker logs
 wrangler tail
