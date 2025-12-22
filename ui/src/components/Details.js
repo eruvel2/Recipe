@@ -188,32 +188,44 @@ function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
         <div className="pt-2">
           <label className="block text-sm font-semibold text-gray-700 mb-3">Ingredients</label>
           <div
-            className="ingredients-scroll flex flex-col gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200"
+            className="flex flex-col gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200"
             style={{
+              height: '300px',
               maxHeight: '300px',
+              minHeight: '300px',
               overflowY: 'scroll',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#888 #f1f1f1'
+              overflowX: 'hidden',
+              WebkitOverflowScrolling: 'touch'
             }}
           >
-            {Array.from({ length: 13 }, (_, i) => (
-              <div key={i} className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={formData.ingredients[i * 2] || ''}
-                  onChange={(e) => handleIngredientChange(i * 2, e.target.value)}
-                  placeholder={`Ingredient ${i * 2 + 1}`}
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
-                />
-                <input
-                  type="text"
-                  value={formData.ingredients[i * 2 + 1] || ''}
-                  onChange={(e) => handleIngredientChange(i * 2 + 1, e.target.value)}
-                  placeholder={`Ingredient ${i * 2 + 2}`}
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
-                />
+            <div className="grid grid-cols-2 gap-4">
+              {/* Left column: Ingredients 1-13 */}
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 13 }, (_, i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    value={formData.ingredients[i] || ''}
+                    onChange={(e) => handleIngredientChange(i, e.target.value)}
+                    placeholder={`Ingredient ${i + 1}`}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
+                  />
+                ))}
               </div>
-            ))}
+              {/* Right column: Ingredients 14-25 */}
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 12 }, (_, i) => (
+                  <input
+                    key={i + 13}
+                    type="text"
+                    value={formData.ingredients[i + 13] || ''}
+                    onChange={(e) => handleIngredientChange(i + 13, e.target.value)}
+                    placeholder={`Ingredient ${i + 14}`}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

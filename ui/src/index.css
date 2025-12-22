@@ -25,7 +25,10 @@ code {
 /* Force scrollbar to always show on ingredients container */
 .ingredients-scroll {
   overflow-y: scroll !important;
-  max-height: 300px !important;
+  max-height: 400px !important;
+  min-height: 400px !important;
+  border: 2px solid red !important;
+  /* Debug border */
 }
 
 /* WebKit browsers (Chrome, Safari, Edge) */

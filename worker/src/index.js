@@ -7,6 +7,8 @@ const app = new Hono();
 
 // CORS configuration - allow all Pages deployments and custom domains
 const allowedOrigins = [
+    'https://924b259e.recipe-app-17d.pages.dev',
+    'https://a2d1b39f.recipe-app-17d.pages.dev',
     'https://cc85b067.recipe-app-17d.pages.dev',
     'https://master.recipe-app-17d.pages.dev',
     'https://recipe-app-17d.pages.dev',
