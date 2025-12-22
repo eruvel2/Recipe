@@ -1,0 +1,17 @@
+name = "recipe-api"
+main = "src/index.js"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+
+# Hyperdrive binding for PostgreSQL connection
+[[hyperdrive]]
+binding = "DB"
+id = "52dfe6aac5a946c6b6744e0adf9bdafa"
+
+# Environment variables (non-secret)
+[vars]
+ENVIRONMENT = "production"
+
+# For local development
+[env.dev]
+vars = { ENVIRONMENT = "development" }

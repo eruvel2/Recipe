@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { signOut } from 'firebase/auth';
+import { auth } from './firebase';
 import List from './List';
 import Details from './Details';
 import Search from './Search';
@@ -11,11 +13,59 @@ function Recipes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const [canUpdate, setCanUpdate] = useState(false);
+  const itemsPerPage = 18;
+
+  // Get user permissions from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setCanUpdate(user.canUpdate || false);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        setCanUpdate(false);
+      }
+    }
+  }, []);
+
+  // Fetch recipes on mount
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        // Get the current user's ID token
+        const user = auth.currentUser;
+        if (!user) {
+          console.error('No authenticated user');
+          return;
+        }
+
+        const idToken = await user.getIdToken();
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/recipes`, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch recipes');
+        }
+
+        const data = await response.json();
+        setRecipes(data);
+      } catch (err) {
+        console.error('Error fetching recipes:', err);
+      }
+    };
+
+    fetchRecipes();
+  }, []);
 
   // Filter recipes based on search and category
   const filteredRecipes = recipes.filter(recipe => {
-    const matchesSearch = recipe.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = recipe.name ? recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) : false;
     const matchesCategory = !selectedCategory || recipe.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -40,23 +90,82 @@ function Recipes() {
     setSelectedRecipe(null);
   };
 
-  const handleUpdate = (recipeData) => {
+  const handleUpdate = async (recipeData) => {
     if (!selectedRecipe) return;
-    
-    setRecipes(recipes.map(recipe => 
-      recipe.id === selectedRecipe.id 
-        ? { ...recipe, ...recipeData }
-        : recipe
-    ));
-    setSelectedRecipe(null);
+
+    try {
+      // Get the current user's ID token
+      const user = auth.currentUser;
+      if (!user) {
+        console.error('No authenticated user');
+        return;
+      }
+
+      const idToken = await user.getIdToken();
+
+      // Use the original name from selectedRecipe for the URL
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/recipes/${encodeURIComponent(selectedRecipe.name)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(recipeData),
+      });
+
+      if (!response.ok) throw new Error('Failed to update recipe');
+
+      const updatedRecipe = await response.json();
+
+      // Update the list with the new data
+      setRecipes(recipes.map(recipe =>
+        // Match by ID if available, otherwise by original name
+        (recipe.id && recipe.id === selectedRecipe.id) || recipe.name === selectedRecipe.name
+          ? { ...recipe, ...updatedRecipe }
+          : recipe
+      ));
+      // Update the selected recipe to reflect changes immediately
+      setSelectedRecipe(updatedRecipe);
+    } catch (err) {
+      console.error('Error updating recipe:', err);
+      // Optional: Show an error message to user
+    }
   };
 
   const handleReset = () => {
     setSelectedRecipe(null);
   };
 
-  const handleRecipeSelect = (recipe) => {
-    setSelectedRecipe(recipe);
+  const handleRecipeSelect = async (recipe) => {
+    if (recipe && recipe.name) {
+      try {
+        // Get the current user's ID token
+        const user = auth.currentUser;
+        if (!user) {
+          console.error('No authenticated user');
+          return;
+        }
+
+        const idToken = await user.getIdToken();
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/recipes/${recipe.name}`, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch recipe details');
+        }
+
+        const data = await response.json();
+        setSelectedRecipe(data);
+      } catch (err) {
+        console.error('Error fetching recipe details:', err);
+      }
+    } else {
+      setSelectedRecipe(recipe);
+    }
   };
 
   const handleSearch = (term) => {
@@ -76,7 +185,7 @@ function Recipes() {
   // Find recipe index for search positioning
   const findRecipeIndex = (term) => {
     if (!term) return;
-    const index = filteredRecipes.findIndex(recipe => 
+    const index = filteredRecipes.findIndex(recipe =>
       recipe.name.toLowerCase().includes(term.toLowerCase())
     );
     if (index !== -1) {
@@ -86,108 +195,98 @@ function Recipes() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #dbeafe, #ffffff, #f3e8ff)', padding: '24px', display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: '1280px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', background: 'linear-gradient(to right, #2563eb, #9333ea)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-purple-100 p-6 flex justify-center" style={{ zoom: '0.75' }}>
+      <div className="w-full max-w-7xl">
+        <div className="flex justify-center mb-4 relative">
+          <h1 className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Recipe Manager
           </h1>
+          <button
+            onClick={() => signOut(auth)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
+            title="Sign Out"
+          >
+            <LogOut size={20} />
+          </button>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '24px', alignItems: 'stretch', flexWrap: 'wrap', minHeight: 'calc(100vh - 200px)' }}>
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-row gap-6 items-stretch flex-wrap min-h-[calc(65vh-200px)]">
             {/* Left Panel */}
-            <div style={{ flex: '1', minWidth: '400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="flex-1 min-w-[400px] flex flex-col gap-4">
               {/* Recipe List - Extended with box */}
-              <div style={{ border: '2px solid #3b82f6', borderRadius: '12px', padding: '8px', backgroundColor: '#78ddde', flex: '1', display: 'flex', flexDirection: 'column', minHeight: '500px' }}>
-                <List 
+              <div className="border-2 border-blue-500 rounded-xl p-2 bg-cyan-300 flex-1 flex flex-col min-h-[350px]">
+                <List
                   recipes={paginatedRecipes}
                   selectedRecipe={selectedRecipe}
                   onRecipeSelect={handleRecipeSelect}
                 />
               </div>
             </div>
-            
+
             {/* Right Panel - Details (to the right of List) with box */}
-            <div style={{ flex: '1', minWidth: '400px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ border: '2px solid #3b82f6', borderRadius: '12px', padding: '8px', backgroundColor: '#78ddde', height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-                <Details 
+            <div className="flex-1 min-w-[400px] flex flex-col">
+              <div className="border-2 border-blue-500 rounded-xl p-2 bg-cyan-300 h-full box-border flex flex-col">
+                <Details
                   recipe={selectedRecipe}
                   onAdd={handleAdd}
                   onUpdate={handleUpdate}
                   onReset={handleReset}
+                  canUpdate={canUpdate}
                 />
               </div>
             </div>
           </div>
-          
+
           {/* Search, Categories and Pagination at the bottom - spanning full width */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="flex flex-col gap-4">
             {/* Search and Categories - Side by side with box - stretched to full width */}
-            <div style={{ border: '2px solid #3b82f6', borderRadius: '12px', padding: '8px', backgroundColor: '#78ddde', boxSizing: 'border-box', width: '100%' }}>
-              <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
-                <div style={{ flex: '1', minWidth: '200px', display: 'flex', boxSizing: 'border-box' }}>
+            <div className="border-2 border-blue-500 rounded-xl p-2 bg-cyan-300 box-border w-full">
+              <div className="flex flex-row gap-4 flex-wrap items-stretch">
+                <div className="flex-1 min-w-[200px] flex box-border">
                   <Search onSearch={handleSearch} onFind={findRecipeIndex} />
                 </div>
-                <div style={{ flex: '1', minWidth: '200px', display: 'flex', boxSizing: 'border-box' }}>
-                  <Categories 
-                    recipes={recipes} 
+                <div className="flex-1 min-w-[200px] flex box-border">
+                  <Categories
+                    recipes={recipes}
                     selectedCategory={selectedCategory}
                     onCategorySelect={handleCategorySelect}
                   />
                 </div>
               </div>
             </div>
-            
+
             {/* Pagination */}
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '16px', backgroundColor: '#78ddde', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', flexWrap: 'wrap' }}>
-              <button 
+            <div className="flex flex-row items-center justify-center gap-3 p-4 bg-cyan-300 rounded-xl shadow-sm border border-gray-200 flex-wrap">
+              <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px', 
-                  padding: '8px 16px', 
-                  background: currentPage === 1 ? '#d1d5db' : 'linear-gradient(to right, #2563eb, #1d4ed8)', 
-                  color: 'white', 
-                  borderRadius: '8px', 
-                  border: 'none', 
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer', 
-                  whiteSpace: 'nowrap',
-                  opacity: currentPage === 1 ? 0.6 : 1
-                }}
+                className={`flex items-center gap-1 px-4 py-2 text-white rounded-lg border-none whitespace-nowrap ${currentPage === 1
+                  ? 'bg-gray-300 cursor-not-allowed opacity-60'
+                  : 'bg-gradient-to-r from-blue-600 to-blue-700 cursor-pointer'
+                  }`}
               >
                 <ChevronLeft size={20} />
                 Previous
               </button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap' }}>
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 whitespace-nowrap">
                 <span>Page</span>
-                <input 
-                  type="number" 
-                  min="1" 
+                <input
+                  type="number"
+                  min="1"
                   max={totalPages || 1}
                   value={currentPage}
                   onChange={(e) => handlePageChange(parseInt(e.target.value) || 1)}
-                  style={{ width: '64px', padding: '4px 8px', textAlign: 'center', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none' }}
+                  className="w-16 px-2 py-1 text-center border border-gray-300 rounded-lg outline-none"
                 />
                 <span>of {totalPages || 1}</span>
               </div>
-              <button 
+              <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage >= totalPages}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px', 
-                  padding: '8px 16px', 
-                  background: currentPage >= totalPages ? '#d1d5db' : 'linear-gradient(to right, #2563eb, #1d4ed8)', 
-                  color: 'white', 
-                  borderRadius: '8px', 
-                  border: 'none', 
-                  cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer', 
-                  whiteSpace: 'nowrap',
-                  opacity: currentPage >= totalPages ? 0.6 : 1
-                }}
+                className={`flex items-center gap-1 px-4 py-2 text-white rounded-lg border-none whitespace-nowrap ${currentPage >= totalPages
+                  ? 'bg-gray-300 cursor-not-allowed opacity-60'
+                  : 'bg-gradient-to-r from-blue-600 to-blue-700 cursor-pointer'
+                  }`}
               >
                 Next
                 <ChevronRight size={20} />

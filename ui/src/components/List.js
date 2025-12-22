@@ -3,40 +3,25 @@ import { BookOpen } from 'lucide-react';
 
 function List({ recipes, selectedRecipe, onRecipeSelect }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', background: 'linear-gradient(to right, #2563eb, #1d4ed8)', color: 'white' }}>
+    <div className="flex flex-col bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden h-full">
+      <div className="flex items-center gap-2 p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <BookOpen size={22} />
-        <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Recipe List</h2>
+        <h2 className="text-lg font-semibold m-0">Recipe List</h2>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', height: '100%', minHeight: '450px' }}>
+      <div className="flex-1 overflow-y-auto min-h-0">
         {recipes.length === 0 ? (
-          <div style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>No recipes found</div>
+          <div className="p-8 text-center text-gray-500">No recipes found</div>
         ) : (
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          <ul className="m-0 p-0 list-none">
             {recipes.map(recipe => (
               <li
-                key={recipe.id}
+                key={recipe.id || recipe.name}
                 onClick={() => onRecipeSelect(recipe)}
-                style={{
-                  padding: '12px 16px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  backgroundColor: selectedRecipe?.id === recipe.id ? '#dbeafe' : 'white',
-                  color: selectedRecipe?.id === recipe.id ? '#1e40af' : '#1f2937',
-                  fontWeight: selectedRecipe?.id === recipe.id ? '600' : '400',
-                  borderLeft: selectedRecipe?.id === recipe.id ? 'none' : 'none',
-                  borderBottom: '1px solid #e5e7eb'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedRecipe?.id !== recipe.id) {
-                    e.currentTarget.style.backgroundColor = '#f9fafb';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedRecipe?.id !== recipe.id) {
-                    e.currentTarget.style.backgroundColor = 'white';
-                  }
-                }}
+                className={`px-3 py-1.5 cursor-pointer transition-all border-b border-gray-200 text-sm ${(selectedRecipe?.id && recipe.id && selectedRecipe.id === recipe.id) ||
+                    (selectedRecipe?.name === recipe.name)
+                    ? 'bg-blue-100 text-blue-800 font-semibold'
+                    : 'bg-white text-gray-800 hover:bg-gray-50'
+                  }`}
               >
                 {recipe.name}
               </li>

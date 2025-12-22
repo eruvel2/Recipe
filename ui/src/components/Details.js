@@ -1,28 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Save, RotateCcw, ChefHat } from 'lucide-react';
 
-function Details({ recipe, onAdd, onUpdate, onReset }) {
+function Details({ recipe, onAdd, onUpdate, onReset, canUpdate = false }) {
   const [formData, setFormData] = useState({
     category: '',
     name: '',
     temperature: '',
     cookTime: '',
-    ingredients: Array(18).fill('')
+    ingredients: Array(25).fill('')
   });
 
   useEffect(() => {
     if (recipe) {
-      const ingredients = recipe.ingredients ? [...recipe.ingredients] : [];
-      // Pad ingredients array to 18 elements
-      while (ingredients.length < 18) {
+      // Extract numbered ingredients from recipe object
+      const ingredients = [];
+      for (let i = 1; i <= 25; i++) {
+        const val = recipe[`ingredient${i}`];
+        if (val) ingredients.push(val);
+      }
+
+      // If none found, check if it's already an array (backward compatibility or different schema)
+      if (ingredients.length === 0 && recipe.ingredients && Array.isArray(recipe.ingredients)) {
+        ingredients.push(...recipe.ingredients);
+      }
+
+      // Pad ingredients array to 12 elements
+      while (ingredients.length < 25) {
         ingredients.push('');
       }
+
       setFormData({
         category: recipe.category || '',
         name: recipe.name || '',
         temperature: recipe.temperature || '',
-        cookTime: recipe.cookTime || '',
-        ingredients: ingredients.slice(0, 18)
+        // API returns 'cooktime', we map it to 'cookTime' state
+        cookTime: recipe.cooktime || recipe.cookTime || '',
+        ingredients: ingredients.slice(0, 25)
       });
     } else {
       setFormData({
@@ -30,7 +43,7 @@ function Details({ recipe, onAdd, onUpdate, onReset }) {
         name: '',
         temperature: '',
         cookTime: '',
-        ingredients: Array(18).fill('')
+        ingredients: Array(25).fill('')
       });
     }
   }, [recipe]);
@@ -66,7 +79,7 @@ function Details({ recipe, onAdd, onUpdate, onReset }) {
       name: '',
       temperature: '',
       cookTime: '',
-      ingredients: Array(18).fill('')
+      ingredients: Array(12).fill('')
     });
   };
 
@@ -81,19 +94,31 @@ function Details({ recipe, onAdd, onUpdate, onReset }) {
     onUpdate(recipeData);
   };
 
-  const handleReset = () => {
+  const handleResetInternal = () => {
+    // Re-trigger the useEffect logic effectively by resetting to recipe prop or empty
+    if (onReset) onReset();
+
+    // We can also just re-run the extraction logic here if needed, 
+    // but typically onReset might clear selection in parent. 
+    // If we just want to reset form to current recipe state:
     if (recipe) {
-      const ingredients = recipe.ingredients ? [...recipe.ingredients] : [];
-      // Pad ingredients array to 18 elements
-      while (ingredients.length < 18) {
+      const ingredients = [];
+      for (let i = 1; i <= 25; i++) {
+        const val = recipe[`ingredient${i}`];
+        if (val) ingredients.push(val);
+      }
+      if (ingredients.length === 0 && recipe.ingredients && Array.isArray(recipe.ingredients)) {
+        ingredients.push(...recipe.ingredients);
+      }
+      while (ingredients.length < 25) {
         ingredients.push('');
       }
       setFormData({
         category: recipe.category || '',
         name: recipe.name || '',
         temperature: recipe.temperature || '',
-        cookTime: recipe.cookTime || '',
-        ingredients: ingredients.slice(0, 18)
+        cookTime: recipe.cooktime || recipe.cookTime || '',
+        ingredients: ingredients.slice(0, 25)
       });
     } else {
       setFormData({
@@ -101,142 +126,120 @@ function Details({ recipe, onAdd, onUpdate, onReset }) {
         name: '',
         temperature: '',
         cookTime: '',
-        ingredients: Array(18).fill('')
+        ingredients: Array(12).fill('')
       });
     }
-    onReset();
   };
 
   return (
-    <div style={{ backgroundColor: 'white', borderRadius: '4px', padding: '24px', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ padding: '8px', background: 'linear-gradient(to bottom right, #3b82f6, #2563eb)', borderRadius: '8px' }}>
-          <ChefHat size={24} style={{ color: 'white' }} />
+    <div className="bg-white rounded-md p-6 h-full overflow-y-auto box-border">
+      <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-200">
+        <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+          <ChefHat size={24} className="text-white" />
         </div>
-        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>Recipe Details</h2>
+        <h2 className="text-2xl font-bold text-gray-800 m-0">Recipe Details</h2>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="flex flex-col gap-5">
         {/* Aligned form fields */}
-        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '12px' }}>
-          <label style={{ fontSize: '14px', fontWeight: '600', color: '#374151', textAlign: 'right' }}>Category:</label>
+        <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+          <label className="text-sm font-semibold text-gray-700 text-right">Category:</label>
           <input
             type="text"
             value={formData.category}
             onChange={(e) => handleChange('category', e.target.value)}
             placeholder="Enter category"
-            style={{ padding: '10px 16px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', fontSize: '14px' }}
-            onFocus={(e) => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.25)'; }}
-            onBlur={(e) => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
           />
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '12px' }}>
-          <label style={{ fontSize: '14px', fontWeight: '600', color: '#374151', textAlign: 'right' }}>Name:</label>
+
+        <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+          <label className="text-sm font-semibold text-gray-700 text-right">Name:</label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Enter recipe name"
-            style={{ padding: '10px 16px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', fontSize: '14px' }}
-            onFocus={(e) => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.25)'; }}
-            onBlur={(e) => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
           />
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '12px' }}>
-          <label style={{ fontSize: '14px', fontWeight: '600', color: '#374151', textAlign: 'right' }}>Temperature:</label>
+
+        <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+          <label className="text-sm font-semibold text-gray-700 text-right">Temperature:</label>
           <input
             type="text"
             value={formData.temperature}
             onChange={(e) => handleChange('temperature', e.target.value)}
             placeholder="Enter temperature"
-            style={{ padding: '10px 16px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', fontSize: '14px' }}
-            onFocus={(e) => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.25)'; }}
-            onBlur={(e) => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
           />
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', alignItems: 'center', gap: '12px' }}>
-          <label style={{ fontSize: '14px', fontWeight: '600', color: '#374151', textAlign: 'right' }}>Cook Time:</label>
+
+        <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+          <label className="text-sm font-semibold text-gray-700 text-right">Cook Time:</label>
           <input
             type="text"
             value={formData.cookTime}
             onChange={(e) => handleChange('cookTime', e.target.value)}
             placeholder="Enter cook time"
-            style={{ padding: '10px 16px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', fontSize: '14px' }}
-            onFocus={(e) => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.25)'; }}
-            onBlur={(e) => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
           />
         </div>
-        
-        <div style={{ paddingTop: '8px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>Ingredients</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-            {Array.from({ length: 9 }, (_, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+
+        <div className="pt-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">Ingredients</label>
+          <div
+            className="ingredients-scroll flex flex-col gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200"
+            style={{
+              maxHeight: '300px',
+              overflowY: 'scroll',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#888 #f1f1f1'
+            }}
+          >
+            {Array.from({ length: 13 }, (_, i) => (
+              <div key={i} className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   value={formData.ingredients[i * 2] || ''}
                   onChange={(e) => handleIngredientChange(i * 2, e.target.value)}
                   placeholder={`Ingredient ${i * 2 + 1}`}
-                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', fontSize: '14px', backgroundColor: 'white' }}
-                  onFocus={(e) => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.25)'; }}
-                  onBlur={(e) => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
                 />
                 <input
                   type="text"
                   value={formData.ingredients[i * 2 + 1] || ''}
                   onChange={(e) => handleIngredientChange(i * 2 + 1, e.target.value)}
                   placeholder={`Ingredient ${i * 2 + 2}`}
-                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', fontSize: '14px', backgroundColor: 'white' }}
-                  onFocus={(e) => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.25)'; }}
-                  onBlur={(e) => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none'; }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg outline-none text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all"
                 />
               </div>
             ))}
           </div>
         </div>
-        
-        <div style={{ display: 'flex', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
-          <button 
-            onClick={handleAdd} 
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flex: 1, padding: '12px 16px', background: 'linear-gradient(to right, #16a34a, #15803d)', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-            onMouseEnter={(e) => { e.target.style.background = 'linear-gradient(to right, #15803d, #166534)'; }}
-            onMouseLeave={(e) => { e.target.style.background = 'linear-gradient(to right, #16a34a, #15803d)'; }}
+
+        <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <button
+            onClick={handleAdd}
+            className="flex items-center justify-center gap-2 flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg border-none cursor-pointer font-semibold shadow-md hover:from-green-700 hover:to-green-800 transition-all"
           >
             <Plus size={18} />
             Add
           </button>
-          <button 
-            onClick={handleUpdate} 
-            disabled={!recipe}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '8px', 
-              flex: 1, 
-              padding: '12px 16px', 
-              background: !recipe ? 'linear-gradient(to right, #d1d5db, #9ca3af)' : 'linear-gradient(to right, #eab308, #ca8a04)', 
-              color: 'white', 
-              borderRadius: '8px', 
-              border: 'none', 
-              cursor: !recipe ? 'not-allowed' : 'pointer', 
-              fontWeight: '600', 
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              opacity: !recipe ? 0.6 : 1
-            }}
-            onMouseEnter={(e) => { if (recipe) e.target.style.background = 'linear-gradient(to right, #ca8a04, #a16207)'; }}
-            onMouseLeave={(e) => { if (recipe) e.target.style.background = 'linear-gradient(to right, #eab308, #ca8a04)'; }}
+          <button
+            onClick={handleUpdate}
+            disabled={!recipe || !canUpdate}
+            title={!canUpdate ? "You don't have permission to update recipes" : ""}
+            className={`flex items-center justify-center gap-2 flex-1 px-4 py-3 text-white rounded-lg border-none font-semibold shadow-md transition-all ${!recipe || !canUpdate
+              ? 'bg-gradient-to-r from-gray-300 to-gray-400 cursor-not-allowed opacity-60'
+              : 'bg-gradient-to-r from-yellow-500 to-yellow-600 cursor-pointer hover:from-yellow-600 hover:to-yellow-700'
+              }`}
           >
             <Save size={18} />
             Update
           </button>
-          <button 
-            onClick={handleReset} 
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flex: 1, padding: '12px 16px', background: 'linear-gradient(to right, #4b5563, #374151)', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-            onMouseEnter={(e) => { e.target.style.background = 'linear-gradient(to right, #374151, #1f2937)'; }}
-            onMouseLeave={(e) => { e.target.style.background = 'linear-gradient(to right, #4b5563, #374151)'; }}
+          <button
+            onClick={handleResetInternal}
+            className="flex items-center justify-center gap-2 flex-1 px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg border-none cursor-pointer font-semibold shadow-md hover:from-gray-700 hover:to-gray-800 transition-all"
           >
             <RotateCcw size={18} />
             Reset
@@ -248,4 +251,3 @@ function Details({ recipe, onAdd, onUpdate, onReset }) {
 }
 
 export default Details;
-
