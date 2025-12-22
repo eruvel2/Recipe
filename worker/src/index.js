@@ -115,7 +115,7 @@ app.get('/api/recipes/:name', verifyFirebaseToken, verifyUserInDB, async (c) => 
 
     try {
         const result = await query(c.env.DB,
-            'SELECT * FROM recipe WHERE trim(lower(name = trim$1',
+            'SELECT * FROM recipe WHERE trim(lower(name)) = trim(lower($1))',
             [name]
         );
 
