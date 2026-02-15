@@ -172,9 +172,9 @@ const Details = memo(function Details({ recipe, onAdd, onUpdate, onReset, canUpd
           <div
             className="flex flex-col gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200"
             style={{
-              height: '300px',
-              maxHeight: '300px',
-              minHeight: '300px',
+              height: '600px',
+              maxHeight: '600px',
+              minHeight: '600px',
               overflowY: 'scroll',
               overflowX: 'hidden',
               WebkitOverflowScrolling: 'touch'
@@ -215,8 +215,8 @@ const Details = memo(function Details({ recipe, onAdd, onUpdate, onReset, canUpd
             disabled={!formData.name || !formData.name.trim() || !canUpdate}
             title={!canUpdate ? "You don't have permission to create recipes" : ""}
             className={`flex items-center justify-center gap-2 flex-1 px-4 py-3 text-white rounded-lg border-none font-semibold shadow-md transition-all ${!formData.name || !formData.name.trim() || !canUpdate
-                ? 'bg-gradient-to-r from-gray-300 to-gray-400 cursor-not-allowed opacity-60'
-                : 'bg-gradient-to-r from-green-600 to-green-700 cursor-pointer hover:from-green-700 hover:to-green-800'
+              ? 'bg-gradient-to-r from-gray-300 to-gray-400 cursor-not-allowed opacity-60'
+              : 'bg-gradient-to-r from-green-600 to-green-700 cursor-pointer hover:from-green-700 hover:to-green-800'
               }`}
           >
             <Plus size={18} />

@@ -259,7 +259,7 @@ function Recipes() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-row gap-6 items-stretch flex-wrap min-h-[calc(65vh-200px)]">
             {/* Left Panel */}
-            <div className="flex-1 min-w-[400px] flex flex-col gap-4">
+            <div className="flex-[0.4] min-w-[300px] flex flex-col gap-4">
               {/* Recipe List - Extended with box */}
               <div className="border-2 border-blue-500 rounded-xl p-2 bg-cyan-300 flex-1 flex flex-col min-h-[350px]">
                 <List
@@ -271,7 +271,7 @@ function Recipes() {
             </div>
 
             {/* Right Panel - Details (to the right of List) with box */}
-            <div className="flex-1 min-w-[400px] flex flex-col">
+            <div className="flex-[1.6] min-w-[500px] flex flex-col">
               <div className="border-2 border-blue-500 rounded-xl p-2 bg-cyan-300 h-full box-border flex flex-col">
                 <Details
                   recipe={selectedRecipe}
