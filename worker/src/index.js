@@ -136,15 +136,15 @@ app.get('/api/recipes/:name', verifyFirebaseToken, verifyUserInDB, async (c) => 
 // Update Recipe
 app.put('/api/recipes/:name', verifyFirebaseToken, verifyUserInDB, async (c) => {
     const oldName = c.req.param('name');
-    const { name, category, temperature, cookTime, ingredients } = await c.req.json();
+    const { name, category, temperature, cookTime, ingredients = [] } = await c.req.json();
 
     try {
-        const values = [name, category, temperature, cookTime || ''];
+        const values = [name, category, temperature || null, cookTime || null];
 
         let ingredientColumns = '';
         for (let i = 0; i < 25; i++) {
             ingredientColumns += `, ingredient${i + 1} = $${i + 5}`;
-            values.push(ingredients[i] || '');
+            values.push(ingredients[i] || null);
         }
 
         values.push(oldName);
@@ -184,7 +184,7 @@ app.post('/api/recipes', verifyFirebaseToken, verifyUserInDB, async (c) => {
         }, 403);
     }
 
-    const { name, category, temperature, cookTime, ingredients } = await c.req.json();
+    const { name, category, temperature, cookTime, ingredients = [] } = await c.req.json();
 
     // Validate required field
     if (!name || !name.trim()) {
@@ -192,11 +192,11 @@ app.post('/api/recipes', verifyFirebaseToken, verifyUserInDB, async (c) => {
     }
 
     try {
-        const values = [name.trim(), category || '', temperature || '', cookTime || ''];
+        const values = [name.trim(), category || '', temperature || null, cookTime || null];
 
         // Add ingredient values
         for (let i = 0; i < 25; i++) {
-            values.push(ingredients[i] || '');
+            values.push(ingredients[i] || null);
         }
 
         const queryText = `
@@ -222,4 +222,9 @@ app.post('/api/recipes', verifyFirebaseToken, verifyUserInDB, async (c) => {
     }
 });
 
-export default app;
+export default {
+    fetch: app.fetch.bind(app),
+    async scheduled(event, env, ctx) {
+        ctx.waitUntil(query(env.DB, 'SELECT 1'));
+    }
+};

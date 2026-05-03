@@ -35,36 +35,24 @@ function Recipes() {
     }
   }, []);
 
+  const fetchRecipes = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      const idToken = await user.getIdToken();
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/recipes`, {
+        headers: { 'Authorization': `Bearer ${idToken}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch recipes');
+      const data = await response.json();
+      setRecipes(data);
+    } catch (err) {
+      console.error('Error fetching recipes:', err);
+    }
+  };
+
   // Fetch recipes on mount
   useEffect(() => {
-    const fetchRecipes = async () => {
-      try {
-        // Get the current user's ID token
-        const user = auth.currentUser;
-        if (!user) {
-          console.error('No authenticated user');
-          return;
-        }
-
-        const idToken = await user.getIdToken();
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/recipes`, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch recipes');
-        }
-
-        const data = await response.json();
-        setRecipes(data);
-      } catch (err) {
-        console.error('Error fetching recipes:', err);
-      }
-    };
-
     fetchRecipes();
   }, []);
 
@@ -124,8 +112,8 @@ function Recipes() {
 
       const newRecipe = await response.json();
 
-      // Add to local state
-      setRecipes([...recipes, newRecipe]);
+      // Re-fetch the full sorted list so the new recipe appears in the correct position
+      await fetchRecipes();
 
       // Select the newly created recipe
       setSelectedRecipe(newRecipe);
